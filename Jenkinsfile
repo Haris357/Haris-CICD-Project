@@ -33,9 +33,11 @@ pipeline {
             steps {
                 withCredentials([usernamePassword(credentialsId: 'dockerhub-creds',
                     usernameVariable: 'DOCKER_USER', passwordVariable: 'DOCKER_PASS')]) {
-                    sh 'docker login -u $DOCKER_USER -p $DOCKER_PASS'
-                    sh 'for i in $(seq 1 40); do docker push $DOCKER_IMAGE:$IMAGE_TAG && break || { echo "push retry $i"; sleep 3; }; done'
-                    sh 'for i in $(seq 1 40); do docker push $DOCKER_IMAGE:latest && break || { echo "push retry $i"; sleep 3; }; done'
+                    sh 'docker login -u $DOCKER_USER -p $DOCKER_PASS || true'
+                    sh 'docker save $DOCKER_IMAGE:$IMAGE_TAG -o image-$BUILD_NUMBER.tar'
+                    sh 'skopeo copy --retry-times 80 --dest-creds "$DOCKER_USER:$DOCKER_PASS" docker-archive:image-$BUILD_NUMBER.tar docker://$DOCKER_IMAGE:$IMAGE_TAG'
+                    sh 'skopeo copy --retry-times 80 --src-creds "$DOCKER_USER:$DOCKER_PASS" --dest-creds "$DOCKER_USER:$DOCKER_PASS" docker://$DOCKER_IMAGE:$IMAGE_TAG docker://$DOCKER_IMAGE:latest'
+                    sh 'rm -f image-$BUILD_NUMBER.tar'
                 }
             }
         }
