@@ -1,10 +1,6 @@
 pipeline {
     agent any
 
-    tools {
-        nodejs 'Node26'
-    }
-
     environment {
         DOCKER_IMAGE = 'haris357/haris-cicd-project'
         IMAGE_TAG    = "${BUILD_NUMBER}"
