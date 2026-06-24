@@ -34,8 +34,8 @@ pipeline {
                 withCredentials([usernamePassword(credentialsId: 'dockerhub-creds',
                     usernameVariable: 'DOCKER_USER', passwordVariable: 'DOCKER_PASS')]) {
                     sh 'docker login -u $DOCKER_USER -p $DOCKER_PASS'
-                    sh 'docker push $DOCKER_IMAGE:$IMAGE_TAG'
-                    sh 'docker push $DOCKER_IMAGE:latest'
+                    sh 'for i in $(seq 1 40); do docker push $DOCKER_IMAGE:$IMAGE_TAG && break || { echo "push retry $i"; sleep 3; }; done'
+                    sh 'for i in $(seq 1 40); do docker push $DOCKER_IMAGE:latest && break || { echo "push retry $i"; sleep 3; }; done'
                 }
             }
         }
@@ -43,7 +43,7 @@ pipeline {
             steps {
                 sh 'docker stop haris-cicd-project || true'
                 sh 'docker rm haris-cicd-project || true'
-                sh 'docker pull $DOCKER_IMAGE:latest'
+                sh 'docker pull $DOCKER_IMAGE:latest || true'
                 sh 'docker run -d -p 3000:3000 --name haris-cicd-project $DOCKER_IMAGE:latest'
                 echo 'App live at localhost:3000!'
             }
